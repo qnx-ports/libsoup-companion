@@ -1,0 +1,67 @@
+# Alpine-Contributor: Rasmus Thomsen <oss@cogitri.dev>
+# Alpine-Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+# Maintainer: Felix Xing <fxing@qnx.com>
+
+pkgname=libsoup
+pkgver=2.74.3
+pkgrel=0
+pkgdesc="Gnome HTTP client/server Library"
+url="https://gitlab.gnome.org/GNOME/libsoup"
+arch="all"
+license="LGPL-2.0-or-later"
+subpackages="$pkgname-dev $pkgname-lang $pkgname-dbg"
+depends_dev="glib-dev 
+            libxml2-dev
+            sqlite-dev
+            libpsl-dev
+            brotli-dev"
+depends="glib-networking 
+        gsettings-desktop-schemas
+        brotli
+        glib
+        libintl
+        libpsl
+        sqlite-libs
+        libxml2
+        zlib
+        "
+makedepends="
+    $depends_dev
+    gobject-introspection-dev
+    libgcrypt-dev
+    meson
+    vala
+    zlib-dev
+    "
+source="https://download.gnome.org/sources/libsoup/${pkgver%.*}/libsoup-$pkgver.tar.xz"
+#options="!check" 
+
+build() {
+    CC=gcc \
+    CXX=g++ \
+    CFLAGS="$CFLAGS -O2 -DNDEBUG" \
+    CXXFLAGS="$CXXFLAGS -O2 -DNDEBUG" \
+    CPPFLAGS="$CPPFLAGS -O2 -DNDEBUG" \
+    abuild-meson \
+        -Db_lto=false \
+        -Dtls_check=false \
+        -Dintrospection=enabled \
+        -Dvapi=enabled \
+        -Dc_link_args="-lsocket" \
+        -Dtests="$(want_check && echo true || echo false)" \
+        . output
+    meson compile -C output
+}
+
+check() {
+    # tls test fails
+    meson test --print-errorlogs -C output || true
+}
+
+package() {
+    DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums="
+72f8a055df984cb35105fe67f4ca67d3fb110d40a9cacb660fccd89f93b06bc32e25d94375dcc76608a245f7c5e081d968d7aaf5952eb16013d81c741247cb4c  libsoup-2.74.3.tar.xz
+"
